@@ -33,6 +33,7 @@ class CustomDataset(Dataset):
 
         # Save image labels (one hot encoding)
         self.labels = [int(i.split(',', 1)[1]) for i in self.indices]
+
         # self.labels_onehot = []
         # for l in labels:
         #     onehot = np.zeros(10)
@@ -41,6 +42,7 @@ class CustomDataset(Dataset):
 
         # Save image names
         self.indices = [i.split(',', 1)[0] for i in self.indices]
+        print("Num images in " + split + " --> " + str(len(self.indices)))
 
     def __len__(self):
         return len(self.indices)
@@ -50,26 +52,36 @@ class CustomDataset(Dataset):
         img_name = self.root_dir + '/img_resized_1M/cities_instagram/' + self.indices[idx] + '.jpg'
         try:
             image = Image.open(img_name)
-            # print("Img FOUND")
+            # print("FOUND " + img_name)
         except:
-            # print("Img file not found")
+            # print("Img file not found, using hardcoded " + img_name)
             img_name = self.root_dir + '/img_resized_1M/cities_instagram/london/1481255189662056249.jpg'
             image = Image.open(img_name)
 
-        if self.Rescale != 0:
-            image = customTransform.Rescale(image,self.Rescale)
+        try:
+            if self.Rescale != 0:
+                image = customTransform.Rescale(image,self.Rescale)
 
-        if self.RandomCrop != 0:
-            image = customTransform.RandomCrop(image,self.RandomCrop)
+            if self.RandomCrop != 0:
+                image = customTransform.RandomCrop(image,self.RandomCrop)
 
-        if self.Mirror:
-            image = customTransform.Mirror(image)
+            if self.Mirror:
+                image = customTransform.Mirror(image)
 
-        im_np = np.array(image, dtype=np.float32)
-        im_np = customTransform.PreprocessImage(im_np)
+            im_np = np.array(image, dtype=np.float32)
+            im_np = customTransform.PreprocessImage(im_np)
+
+        except:
+            print("Error on data aumentation, using hardcoded")
+            img_name = self.root_dir + '/img_resized_1M/cities_instagram/london/1481255189662056249.jpg'
+            image = Image.open(img_name)
+            if self.RandomCrop != 0:
+                image = customTransform.RandomCrop(image,self.RandomCrop)
+            im_np = np.array(image, dtype=np.float32)
+            im_np = customTransform.PreprocessImage(im_np)
+
         out_img = np.copy(im_np)
 
-        # label = torch.from_numpy(self.labels_onehot[idx])
         label = torch.from_numpy(np.array([int(self.labels[idx])]))
         label = label.type(torch.LongTensor)
 
