@@ -16,13 +16,13 @@ from pylab import zeros, arange, subplots, plt, savefig
 
 training_id = 'test training'
 dataset = '../../datasets/SocialMedia' # Path to dataset
-split_train = 'city_classification_gt/cities_instagram/toy'
-split_val =  'city_classification_gt/cities_instagram/toy'
+split_train = 'city_classification_gt/cities_instagram/toy_multilabel'
+split_val =  'city_classification_gt/cities_instagram/toy_multilabel'
 arch = 'resnet18'
 workers = 4 # Num of data loading workers
 epochs = 90
 start_epoch = 0 # Useful on restarts
-batch_size = 16 #256 # Batch size
+batch_size = 1 #256 # Batch size
 lr = 0.1 # Initial learning rate
 momentum = 0.9
 weight_decay = 1e-4
@@ -47,9 +47,21 @@ if arch.startswith('alexnet') or arch.startswith('vgg'):
 else:
     model = torch.nn.DataParallel(model).cuda()
 
+# Edit model
+# for param in model.parameters():
+#     param.requires_grad = False # This would froze all net
+# Replace the last fully-connected layer
+# Parameters of newly constructed modules have requires_grad=True by default
+num_classes = 5
+del(model.module._modules['fc'])
+model.module.fc = nn.Linear(512,5)
+print model
+model.cuda()
+# print model
 
 # define loss function (criterion) and optimizer
-criterion = nn.CrossEntropyLoss().cuda()
+# criterion = nn.CrossEntropyLoss().cuda()
+criterion = nn.MultiLabelSoftMarginLoss().cuda()
 
 optimizer = torch.optim.SGD(model.parameters(), lr,
                             momentum=momentum,

@@ -31,14 +31,18 @@ class CustomDataset(Dataset):
         split_f  = '{}/{}.txt'.format(root_dir, split)
         self.indices = open(split_f, 'r').read().splitlines()
 
-        # Save image labels (one hot encoding)
-        self.labels = [int(i.split(',', 1)[1]) for i in self.indices]
+        # Simple Classification (class index)
+        # self.labels = [int(i.split(',', 1)[1]) for i in self.indices]
 
-        # self.labels_onehot = []
-        # for l in labels:
-        #     onehot = np.zeros(10)
-        #     onehot[l] = 1
-        #     self.labels_onehot.append(onehot)
+        # Multilabel / Regression
+        self.labels = []
+        num_classes = 5
+        for i in self.indices:
+            data = i.split(',')
+            cur_label = np.zeros(num_classes)
+            for c in range(0, num_classes):
+                cur_label[c] = float(data[c+1])
+            self.labels.append(cur_label)
 
         # Save image names
         self.indices = [i.split(',', 1)[0] for i in self.indices]
@@ -82,7 +86,12 @@ class CustomDataset(Dataset):
 
         out_img = np.copy(im_np)
 
-        label = torch.from_numpy(np.array([int(self.labels[idx])]))
-        label = label.type(torch.LongTensor)
+        # Simple Classification (class index)
+        # label = torch.from_numpy(np.array([int(self.labels[idx])]))
+        # label = label.type(torch.LongTensor)
+
+        # Multilabel / Regression
+        label = torch.from_numpy(np.array(self.labels[idx]))
+        label = label.type(torch.FloatTensor)
 
         return torch.from_numpy(out_img), label
