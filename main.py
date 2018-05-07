@@ -139,13 +139,13 @@ for epoch in range(start_epoch, epochs):
     # remember best prec@1 and save checkpoint
     is_best = prec1 > best_prec1
     best_prec1 = max(prec1, best_prec1)
-    t.save_checkpoint({
+    t.save_checkpoint(dataset, {
         'epoch': epoch + 1,
         'arch': arch,
         'state_dict': model.state_dict(),
         'best_prec1': best_prec1,
         'optimizer' : optimizer.state_dict(),
-    }, is_best, filename=training_id + str(epoch) + '.pth.tar')
+    }, is_best, filename= dataset +'models/training/' + training_id + str(epoch) + '.pth.tar')
 
     if plot:
         ax1.plot(it_axes[0:epoch], plot_data['train_loss'][0:epoch], 'r')
