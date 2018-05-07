@@ -10,6 +10,7 @@ from torchvision import transforms, utils
 import cv2
 import customTransform
 from PIL import Image
+import json
 
 class CustomDataset(Dataset):
     """Face Landmarks dataset."""
@@ -23,43 +24,67 @@ class CustomDataset(Dataset):
                 on a sample.
         """
         self.root_dir = root_dir
+        self.split = split
         self.Rescale = Rescale
         self.RandomCrop = RandomCrop
         self.Mirror = Mirror
+        self.num_classes = 228
 
-
-        split_f  = '{}/{}.txt'.format(root_dir, split)
-        self.indices = open(split_f, 'r').read().splitlines()
+        # split_f  = '{}/{}.txt'.format(root_dir, split)
+        # self.indices = open(split_f, 'r').read().splitlines()
 
         # Simple Classification (class index)
         # self.labels = [int(i.split(',', 1)[1]) for i in self.indices]
 
         # Multilabel / Regression
-        self.labels = []
-        num_classes = 5
-        for i in self.indices:
-            data = i.split(',')
-            cur_label = np.zeros(num_classes)
-            for c in range(0, num_classes):
-                cur_label[c] = float(data[c+1])
-            self.labels.append(cur_label)
+        # self.labels = []
+        # num_classes = 5
+        # for i in self.indices:
+        #     data = i.split(',')
+        #     cur_label = np.zeros(num_classes)
+        #     for c in range(0, num_classes):
+        #         cur_label[c] = float(data[c+1])
+        #     self.labels.append(cur_label)
 
         # Save image names
-        self.indices = [i.split(',', 1)[0] for i in self.indices]
-        print("Num images in " + split + " --> " + str(len(self.indices)))
+        # self.indices = [i.split(',', 1)[0] for i in self.indices]
+        # print("Num images in " + split + " --> " + str(len(self.indices)))
+
+        # iMaterialist
+        with open(root_dir + split + '.json', 'r') as f:
+            data = json.load(f)
+        num_elements = len(data["annotations"])
+        print("Number of images: " + str(num_elements))
+
+        # Load labels for multiclass
+        self.indices = np.empty([num_elements], dtype="S50")
+        self.labels = np.zeros((num_elements, self.num_classes), dtype=np.float32)
+
+        for c, image in enumerate(data["annotations"]):
+            gt_labels = image["labelId"]
+            self.indices[c] = image["imageId"]
+            for l in gt_labels:
+                self.labels[c, int(l) - 1] = 1
+            if c % 100000 == 0: print("Read " + str(c) + " / " + str(num_elements))
+        print("Labels read.")
+
 
     def __len__(self):
         return len(self.indices)
 
 
     def __getitem__(self, idx):
-        img_name = self.root_dir + '/img_resized_1M/cities_instagram/' + self.indices[idx] + '.jpg'
+        # img_name = self.root_dir + '/img_resized_1M/cities_instagram/' + self.indices[idx] + '.jpg'
+        if self.split == '/anns/validation':
+            img_name = '{}{}/{}{}'.format(self.root_dir , 'img_val', idx, '.jpg')
+        else:
+            img_name = '{}{}/{}{}'.format(self.root_dir , 'img', idx, '.jpg')
         try:
             image = Image.open(img_name)
             # print("FOUND " + img_name)
         except:
-            # print("Img file not found, using hardcoded " + img_name)
-            img_name = self.root_dir + '/img_resized_1M/cities_instagram/london/1481255189662056249.jpg'
+            print("Img file not found, using hardcoded " + img_name)
+            img_name = '../../datasets/SocialMedia/img_resized_1M/cities_instagram/london/1481255189662056249.jpg'
             image = Image.open(img_name)
 
         try:

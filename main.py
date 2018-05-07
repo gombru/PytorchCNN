@@ -14,22 +14,22 @@ from pylab import zeros, arange, subplots, plt, savefig
 #     if name.islower() and not name.startswith("__")
 #     and callable(models.__dict__[name]))
 
-training_id = 'test training'
-dataset = '../../datasets/SocialMedia' # Path to dataset
-split_train = 'city_classification_gt/cities_instagram/toy_multilabel'
-split_val =  'city_classification_gt/cities_instagram/toy_multilabel'
-arch = 'resnet18'
-workers = 4 # Num of data loading workers
+training_id = 'resnet50'
+dataset = '../../datasets/iMaterialistFashion' # Path to dataset
+split_train = '/anns/train'
+split_val =  '/anns/validation'
+arch = 'resnet50'
+workers = 12 # Num of data loading workers
 epochs = 90
 start_epoch = 0 # Useful on restarts
-batch_size = 1 #256 # Batch size
+batch_size = 256 #256 # Batch size
 lr = 0.1 # Initial learning rate
 momentum = 0.9
 weight_decay = 1e-4
 print_freq = 1
 resume = None # Path to checkpoint top resume training
 pretrained = True
-evaluate = False # Evaluate model on validation set
+evaluate = True # Evaluate model on validation set at start
 plot = True
 best_prec1 = 0
 
@@ -52,11 +52,11 @@ else:
 #     param.requires_grad = False # This would froze all net
 # Replace the last fully-connected layer
 # Parameters of newly constructed modules have requires_grad=True by default
-num_classes = 5
+num_classes = 228
 del(model.module._modules['fc'])
-model.module.fc = nn.Linear(512,5)
+model.module.fc = nn.Linear(512,num_classes)
 print model
-model.cuda()
+model = torch.nn.DataParallel(model).cuda()
 # print model
 
 # define loss function (criterion) and optimizer
@@ -145,7 +145,7 @@ for epoch in range(start_epoch, epochs):
         'state_dict': model.state_dict(),
         'best_prec1': best_prec1,
         'optimizer' : optimizer.state_dict(),
-    }, is_best)
+    }, is_best, filename=training_id + str(epoch) + '.pth.tar')
 
     if plot:
         ax1.plot(it_axes[0:epoch], plot_data['train_loss'][0:epoch], 'r')
@@ -161,7 +161,7 @@ for epoch in range(start_epoch, epochs):
         plt.grid(True)
         plt.show()
         plt.pause(0.001)
-        title = training_id + '.png'  # Save graph to disk
+        title = dataset +'models/training/' + training_id + str(epoch) + '.png'  # Save graph to disk
         savefig(title, bbox_inches='tight')
 
 
