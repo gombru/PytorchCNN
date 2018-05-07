@@ -15,7 +15,7 @@ from pylab import zeros, arange, subplots, plt, savefig
 #     and callable(models.__dict__[name]))
 
 training_id = 'resnet50'
-dataset = '../../datasets/iMaterialistFashion' # Path to dataset
+dataset = '../../ssd2/iMaterialistFashion' # Path to dataset
 split_train = '/anns/train'
 split_val =  '/anns/validation'
 arch = 'resnet50'
@@ -41,23 +41,21 @@ else:
     print("=> creating model '{}'".format(arch))
     model = models.__dict__[arch]()
 
-if arch.startswith('alexnet') or arch.startswith('vgg'):
-    model.features = torch.nn.DataParallel(model.features)
-    model.cuda()
-else:
-    model = torch.nn.DataParallel(model).cuda()
-
 # Edit model
 # for param in model.parameters():
 #     param.requires_grad = False # This would froze all net
 # Replace the last fully-connected layer
 # Parameters of newly constructed modules have requires_grad=True by default
 num_classes = 228
-del(model.module._modules['fc'])
-model.module.fc = nn.Linear(512,num_classes)
-print model
-model = torch.nn.DataParallel(model).cuda()
-# print model
+del(model._modules['fc'])
+model.fc = nn.Linear(2048,num_classes)
+print(model)
+
+if arch.startswith('alexnet') or arch.startswith('vgg'):
+    model.features = torch.nn.DataParallel(model.features)
+    model.cuda()
+else:
+    model = torch.nn.DataParallel(model).cuda()
 
 # define loss function (criterion) and optimizer
 # criterion = nn.CrossEntropyLoss().cuda()
@@ -102,18 +100,19 @@ train_loader = torch.utils.data.DataLoader(
 val_loader = torch.utils.data.DataLoader(
     val_dataset, batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
 
-if evaluate:
-    t.validate(val_loader, model, criterion)
-
 plot_data = {}
-plot_data['train_loss'] = zeros(epochs)
-plot_data['train_top1'] = zeros(epochs)
-plot_data['train_top5'] = zeros(epochs)
-plot_data['val_loss'] = zeros(epochs)
-plot_data['val_top1'] = zeros(epochs)
-plot_data['val_top5'] = zeros(epochs)
+plot_data['train_loss'] = zeros(epochs+1)
+plot_data['train_top1'] = zeros(epochs+1)
+plot_data['train_top5'] = zeros(epochs+1)
+plot_data['val_loss'] = zeros(epochs+1)
+plot_data['val_top1'] = zeros(epochs+1)
+plot_data['val_top5'] = zeros(epochs+1)
+plot_data['epoch'] = 0
 
-it_axes = arange(epochs)
+if evaluate:
+    t.validate(val_loader, model, criterion, print_freq, plot_data)
+
+it_axes = arange(epochs+1)
 
 _, ax1 = subplots()
 ax2 = ax1.twinx()
@@ -121,12 +120,11 @@ ax1.set_xlabel('epoch')
 ax1.set_ylabel('train loss (r), val loss (y)')
 ax2.set_ylabel('train TOP1 (b), val TOP1 (g), train TOP-5 (c), val TOP-5 (k)')
 ax2.set_autoscaley_on(False)
-ax1.set_ylim([0, 10])
-ax2.set_ylim([0, 100])
+ax1.set_ylim([0, 0.08])
+ax2.set_ylim([0, 60])
 
 
-
-for epoch in range(start_epoch, epochs):
+for epoch in range(start_epoch + 1, epochs + 1):
     plot_data['epoch'] = epoch
     lr = t.adjust_learning_rate(optimizer, epoch, lr)
 
@@ -140,12 +138,12 @@ for epoch in range(start_epoch, epochs):
     is_best = prec1 > best_prec1
     best_prec1 = max(prec1, best_prec1)
     t.save_checkpoint(dataset, {
-        'epoch': epoch + 1,
+        'epoch': epoch,
         'arch': arch,
         'state_dict': model.state_dict(),
         'best_prec1': best_prec1,
         'optimizer' : optimizer.state_dict(),
-    }, is_best, filename= dataset +'models/training/' + training_id + str(epoch) + '.pth.tar')
+    }, is_best, filename= dataset +'/models/CNN/' + training_id + '_epoch_' + str(epoch) + '.pth.tar')
 
     if plot:
         ax1.plot(it_axes[0:epoch], plot_data['train_loss'][0:epoch], 'r')
@@ -161,7 +159,7 @@ for epoch in range(start_epoch, epochs):
         plt.grid(True)
         plt.show()
         plt.pause(0.001)
-        title = dataset +'models/training/' + training_id + str(epoch) + '.png'  # Save graph to disk
+        title = dataset +'/models/training/' + training_id + '_epoch_' + str(epoch) + '.png'  # Save graph to disk
         savefig(title, bbox_inches='tight')
 
 

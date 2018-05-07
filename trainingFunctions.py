@@ -19,6 +19,7 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_dat
 
     end = time.time()
     for i, (input, target) in enumerate(train_loader):
+
         # measure data loading time
         data_time.update(time.time() - end)
 
@@ -33,7 +34,11 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_dat
         # measure accuracy and record loss
         # prec1, prec5 = accuracy(output.data, target, topk=(1, 5))
         # for multilabel, we select a random positive class to compute accuracy, and for regression the max value
-        prec1, prec5 = accuracy(output.data, (target[0] == target[0].max()).nonzero()[0], topk=(1, 5))
+        one_target = torch.zeros([int(target.size()[0]), 1])
+        for c in range(0,int(target.size()[0])):
+            one_target[c] = (target[c] == target[c].max()).nonzero()[0].float()[0]
+        prec1, prec5 = accuracy(output.data, one_target.long().cuda(), topk=(1, 5))
+
         losses.update(loss.data[0], input.size(0))
         top1.update(prec1[0], input.size(0))
         top5.update(prec5[0], input.size(0))
@@ -89,7 +94,10 @@ def validate(val_loader, model, criterion, print_freq, plot_data):
         # measure accuracy and record loss
         # prec1, prec5 = accuracy(output.data, target, topk=(1, 5))
         # for multilabel, we select a random positive class to compute accuracy, and for regression the max value
-        prec1, prec5 = accuracy(output.data, (target[0] == target[0].max()).nonzero()[0], topk=(1, 5))
+        one_target = torch.zeros([int(target.size()[0]), 1])
+        for c in range(0,int(target.size()[0])):
+            one_target[c] = (target[c] == target[c].max()).nonzero()[0].float()[0]
+        prec1, prec5 = accuracy(output.data, one_target.long().cuda(), topk=(1, 5))
 
         losses.update(loss.data[0], input.size(0))
         top1.update(prec1[0], input.size(0))
@@ -121,7 +129,7 @@ def validate(val_loader, model, criterion, print_freq, plot_data):
 def save_checkpoint(dataset, state, is_best, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, dataset +'models/training/' + 'model_best.pth.tar')
+        shutil.copyfile(filename, dataset +'/models/CNN/' + 'model_best.pth.tar')
 
 
 class AverageMeter(object):

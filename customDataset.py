@@ -54,6 +54,7 @@ class CustomDataset(Dataset):
         with open(root_dir + split + '.json', 'r') as f:
             data = json.load(f)
         num_elements = len(data["annotations"])
+        # num_elements = 1000
         print("Number of images: " + str(num_elements))
 
         # Load labels for multiclass
@@ -66,6 +67,7 @@ class CustomDataset(Dataset):
             for l in gt_labels:
                 self.labels[c, int(l) - 1] = 1
             if c % 100000 == 0: print("Read " + str(c) + " / " + str(num_elements))
+            # if c % 1000 == 0: break
         print("Labels read.")
 
 
@@ -76,14 +78,14 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         # img_name = self.root_dir + '/img_resized_1M/cities_instagram/' + self.indices[idx] + '.jpg'
         if self.split == '/anns/validation':
-            img_name = '{}{}/{}{}'.format(self.root_dir , 'img_val', idx, '.jpg')
+            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img_val', idx, '.jpg')
         else:
-            img_name = '{}{}/{}{}'.format(self.root_dir , 'img', idx, '.jpg')
+            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img', idx, '.jpg')
         try:
             image = Image.open(img_name)
             # print("FOUND " + img_name)
         except:
-            print("Img file not found, using hardcoded " + img_name)
+            print("Img file " + img_name + " not found, using hardcoded " + img_name)
             img_name = '../../datasets/SocialMedia/img_resized_1M/cities_instagram/london/1481255189662056249.jpg'
             image = Image.open(img_name)
 
