@@ -153,7 +153,7 @@ class AverageMeter(object):
 def adjust_learning_rate(optimizer, epoch, lr, decay_every):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
 
-    # lr = lr * (0.1 ** (epoch // decay_every))
+    # lr = lr * (0.1 ** (epoch // decay_every)) # This was the former code but its wrong
 
     if epoch != 0 and epoch % decay_every == 0:
         lr = lr * 0.1

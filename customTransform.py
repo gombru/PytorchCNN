@@ -33,3 +33,18 @@ def RandomCrop(im, output_size):
     top = random.randint(0, height - output_size - 1)
     im = im.crop((left, top, left + output_size, top + output_size))
     return im
+
+def CenterCrop(im, crop_size, output_size):
+    width, height = im.size
+    if width != crop_size:
+
+        left = (width - crop_size) / 2
+        right = width - left
+        im = im.crop((left, 0, right, height))
+
+    if height != crop_size:
+        top = (height - crop_size) / 2
+        bot = height - top
+        im = im.crop((0, top, width, bot))
+
+    return im.resize((output_size, output_size), Image.ANTIALIAS)

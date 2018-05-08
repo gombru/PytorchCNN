@@ -30,7 +30,7 @@ weight_decay = 1e-4
 print_freq = 1
 resume = None # Path to checkpoint top resume training
 pretrained = True
-evaluate = True # Evaluate model on validation set at start
+# evaluate = False # Evaluate model on validation set at start
 plot = True
 best_prec1 = 0
 
@@ -103,18 +103,18 @@ val_loader = torch.utils.data.DataLoader(
     val_dataset, batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True)
 
 plot_data = {}
-plot_data['train_loss'] = zeros(epochs+1)
-plot_data['train_top1'] = zeros(epochs+1)
-plot_data['train_top5'] = zeros(epochs+1)
-plot_data['val_loss'] = zeros(epochs+1)
-plot_data['val_top1'] = zeros(epochs+1)
-plot_data['val_top5'] = zeros(epochs+1)
+plot_data['train_loss'] = zeros(epochs)
+plot_data['train_top1'] = zeros(epochs)
+plot_data['train_top5'] = zeros(epochs)
+plot_data['val_loss'] = zeros(epochs)
+plot_data['val_top1'] = zeros(epochs)
+plot_data['val_top5'] = zeros(epochs)
 plot_data['epoch'] = 0
 
-if evaluate:
-    t.validate(val_loader, model, criterion, print_freq, plot_data)
+# if evaluate:
+#     t.validate(val_loader, model, criterion, print_freq, plot_data)
 
-it_axes = arange(epochs+1)
+it_axes = arange(epochs)
 
 _, ax1 = subplots()
 ax2 = ax1.twinx()
@@ -126,7 +126,7 @@ ax1.set_ylim([0, 0.08])
 ax2.set_ylim([0, 60])
 
 
-for epoch in range(start_epoch + 1, epochs + 1):
+for epoch in range(start_epoch, epochs):
     plot_data['epoch'] = epoch
     lr = t.adjust_learning_rate(optimizer, epoch, lr, decay_every)
 
@@ -140,12 +140,13 @@ for epoch in range(start_epoch + 1, epochs + 1):
     is_best = prec1 > best_prec1
     best_prec1 = max(prec1, best_prec1)
     t.save_checkpoint(dataset, {
+        'model': model,
         'epoch': epoch,
         'arch': arch,
         'state_dict': model.state_dict(),
         'best_prec1': best_prec1,
         'optimizer' : optimizer.state_dict(),
-    }, is_best, filename= dataset +'/models/CNN/' + training_id + '_epoch_' + str(epoch) + '.pth.tar')
+    }, is_best, filename = dataset +'/models/CNN/' + training_id + '_epoch_' + str(epoch) + '.pth.tar')
 
     if plot:
         ax1.plot(it_axes[0:epoch], plot_data['train_loss'][0:epoch], 'r')
