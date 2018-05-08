@@ -14,7 +14,7 @@ from pylab import zeros, arange, subplots, plt, savefig
 #     if name.islower() and not name.startswith("__")
 #     and callable(models.__dict__[name]))
 
-training_id = 'resnet50'
+training_id = 'resnet50_BCE'
 dataset = '../../ssd2/iMaterialistFashion' # Path to dataset
 split_train = '/anns/train'
 split_val =  '/anns/validation'
@@ -59,7 +59,8 @@ else:
 
 # define loss function (criterion) and optimizer
 # criterion = nn.CrossEntropyLoss().cuda()
-criterion = nn.MultiLabelSoftMarginLoss().cuda()
+# criterion = nn.MultiLabelSoftMarginLoss().cuda() # This is not the loss I want
+criterion = nn.BCEWithLogitsLoss().cuda()
 
 optimizer = torch.optim.SGD(model.parameters(), lr,
                             momentum=momentum,
