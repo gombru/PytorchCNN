@@ -22,8 +22,9 @@ arch = 'resnet50'
 workers = 12 # Num of data loading workers
 epochs = 90
 start_epoch = 0 # Useful on restarts
-batch_size = 256 #256 # Batch size
-lr = 0.1 # Initial learning rate
+batch_size = 340 #256 # Batch size
+lr = 0.01 # Initial learning rate # Default 0.1, but people report better performance with 0.01 and 0.001
+decay_every = 10 # Decay lr by a factor of 10 every decay_every epochs
 momentum = 0.9
 weight_decay = 1e-4
 print_freq = 1
@@ -127,7 +128,7 @@ ax2.set_ylim([0, 60])
 
 for epoch in range(start_epoch + 1, epochs + 1):
     plot_data['epoch'] = epoch
-    lr = t.adjust_learning_rate(optimizer, epoch, lr)
+    lr = t.adjust_learning_rate(optimizer, epoch, lr, decay_every)
 
     # train for one epoch
     plot_data = t.train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_data)

@@ -150,9 +150,15 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def adjust_learning_rate(optimizer, epoch, lr):
+def adjust_learning_rate(optimizer, epoch, lr, decay_every):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-    lr = lr * (0.1 ** (epoch // 30))
+
+    # lr = lr * (0.1 ** (epoch // decay_every))
+
+    if epoch != 0 and epoch % decay_every == 0:
+        lr = lr * 0.1
+        print("Learning rate changed to " + str(lr))
+
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr
