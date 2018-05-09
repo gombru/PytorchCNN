@@ -14,20 +14,20 @@ from pylab import zeros, arange, subplots, plt, savefig
 #     if name.islower() and not name.startswith("__")
 #     and callable(models.__dict__[name]))
 
-training_id = 'resnet50_BCE'
+training_id = 'resnet101_BCE'
 dataset = '../../ssd2/iMaterialistFashion' # Path to dataset
 split_train = '/anns/train'
 split_val =  '/anns/validation'
-arch = 'resnet50'
+arch = 'resnet101'
 workers = 12 # Num of data loading workers
-epochs = 90
+epochs = 150
 start_epoch = 0 # Useful on restarts
-batch_size = 340 #256 # Batch size
+batch_size = 256 #256 # Batch size
 lr = 0.01 # Initial learning rate # Default 0.1, but people report better performance with 0.01 and 0.001
-decay_every = 10 # Decay lr by a factor of 10 every decay_every epochs
+decay_every = 12 # Decay lr by a factor of 10 every decay_every epochs
 momentum = 0.9
 weight_decay = 1e-4
-print_freq = 100
+print_freq = 500
 resume = None # Path to checkpoint top resume training
 pretrained = True
 # evaluate = False # Evaluate model on validation set at start
@@ -56,7 +56,7 @@ if arch.startswith('alexnet') or arch.startswith('vgg'):
     model.features = torch.nn.DataParallel(model.features)
     model.cuda()
 else:
-    model = torch.nn.DataParallel(model).cuda()
+    model = torch.nn.DataParallel(model,device_ids=[0, 1, 2, 3]).cuda()
 
 # define loss function (criterion) and optimizer
 # criterion = nn.CrossEntropyLoss().cuda()
@@ -122,7 +122,7 @@ ax1.set_xlabel('epoch')
 ax1.set_ylabel('train loss (r), val loss (y)')
 ax2.set_ylabel('train TOP1 (b), val TOP1 (g), train TOP-5 (c), val TOP-5 (k)')
 ax2.set_autoscaley_on(False)
-ax1.set_ylim([0, 0.08])
+ax1.set_ylim([0, 0.1])
 ax2.set_ylim([0, 60])
 
 
@@ -164,6 +164,5 @@ for epoch in range(start_epoch, epochs):
         plt.pause(0.001)
         title = dataset +'/models/training/' + training_id + '_epoch_' + str(epoch) + '.png'  # Save graph to disk
         savefig(title, bbox_inches='tight')
-
 
 

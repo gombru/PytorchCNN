@@ -54,7 +54,7 @@ class CustomDataset(Dataset):
         with open(root_dir + split + '.json', 'r') as f:
             data = json.load(f)
         num_elements = len(data["annotations"])
-        # num_elements = 1000
+        #num_elements = 9001
         print("Number of images: " + str(num_elements))
 
         # Load labels for multiclass
@@ -66,8 +66,8 @@ class CustomDataset(Dataset):
             self.indices[c] = image["imageId"]
             for l in gt_labels:
                 self.labels[c, int(l) - 1] = 1
-            if c % 1 == 0: print("Read " + str(c) + " / " + str(num_elements))
-            # if c % 1000 == 0: break
+            if c % 100000 == 0: print("Read " + str(c) + " / " + str(num_elements))
+            #if c == 9000: break
         print("Labels read.")
 
 
