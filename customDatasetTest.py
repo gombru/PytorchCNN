@@ -51,9 +51,9 @@ class customDatasetTest(Dataset):
     def __getitem__(self, idx):
 
         if self.split == '/anns/validation':
-            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img_val', idx, '.jpg')
+            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img_val', self.indices[idx], '.jpg')
         else:
-            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img', idx, '.jpg')
+            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img', self.indices[idx], '.jpg')
         try:
             image = Image.open(img_name)
 

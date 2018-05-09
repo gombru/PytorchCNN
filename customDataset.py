@@ -66,7 +66,7 @@ class CustomDataset(Dataset):
             self.indices[c] = image["imageId"]
             for l in gt_labels:
                 self.labels[c, int(l) - 1] = 1
-            if c % 100000 == 0: print("Read " + str(c) + " / " + str(num_elements))
+            if c % 1 == 0: print("Read " + str(c) + " / " + str(num_elements))
             # if c % 1000 == 0: break
         print("Labels read.")
 
@@ -78,9 +78,9 @@ class CustomDataset(Dataset):
     def __getitem__(self, idx):
         # img_name = self.root_dir + '/img_resized_1M/cities_instagram/' + self.indices[idx] + '.jpg'
         if self.split == '/anns/validation':
-            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img_val', idx, '.jpg')
+            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img_val', self.indices[idx], '.jpg')
         else:
-            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img', idx, '.jpg')
+            img_name = '{}/{}/{}{}'.format(self.root_dir , 'img', self.indices[idx], '.jpg')
         try:
             image = Image.open(img_name)
             # print("FOUND " + img_name)
