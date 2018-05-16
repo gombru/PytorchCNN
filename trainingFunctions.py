@@ -7,7 +7,7 @@ import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
 
-def train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_data):
+def train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_data, gpu):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -23,7 +23,7 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_dat
         # measure data loading time
         data_time.update(time.time() - end)
 
-        target = target.cuda(async=True)
+        target = target.cuda(gpu, async=True)
         input_var = torch.autograd.Variable(input)
         target_var = torch.autograd.Variable(target).squeeze(1)
 
@@ -37,7 +37,7 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_dat
         one_target = torch.zeros([int(target.size()[0]), 1])
         for c in range(0,int(target.size()[0])):
             one_target[c] = (target[c] == target[c].max()).nonzero()[0].float()[0]
-        prec1, prec5 = accuracy(output.data, one_target.long().cuda(), topk=(1, 5))
+        prec1, prec5 = accuracy(output.data, one_target.long().cuda(gpu), topk=(1, 5))
 
         losses.update(loss.data[0], input.size(0))
         top1.update(prec1[0], input.size(0))
@@ -69,7 +69,7 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_dat
     return plot_data
 
 
-def validate(val_loader, model, criterion, print_freq, plot_data):
+def validate(val_loader, model, criterion, print_freq, plot_data, gpu):
     with torch.no_grad():
 
         batch_time = AverageMeter()
@@ -82,7 +82,7 @@ def validate(val_loader, model, criterion, print_freq, plot_data):
 
         end = time.time()
         for i, (input, target) in enumerate(val_loader):
-            target = target.cuda(async=True)
+            target = target.cuda(gpu, async=True)
             input_var = torch.autograd.Variable(input)
             target_var = torch.autograd.Variable(target).squeeze(1) # Needed because we need a 1-dimension vector
 
@@ -99,7 +99,7 @@ def validate(val_loader, model, criterion, print_freq, plot_data):
             one_target = torch.zeros([int(target.size()[0]), 1])
             for c in range(0,int(target.size()[0])):
                 one_target[c] = (target[c] == target[c].max()).nonzero()[0].float()[0]
-            prec1, prec5 = accuracy(output.data, one_target.long().cuda(), topk=(1, 5))
+            prec1, prec5 = accuracy(output.data, one_target.long().cuda(gpu), topk=(1, 5))
 
             losses.update(loss.data[0], input.size(0))
             top1.update(prec1[0], input.size(0))

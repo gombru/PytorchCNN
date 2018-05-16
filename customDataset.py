@@ -90,6 +90,10 @@ class CustomDataset(Dataset):
             image = Image.open(img_name)
 
         try:
+            width, height = image.size
+            if self.RandomCrop >= width or self.RandomCrop >= height:
+                image = image.resize((int(width*1.5), int(height*1.5)), Image.ANTIALIAS)
+
             if self.Rescale != 0:
                 image = customTransform.Rescale(image,self.Rescale)
 

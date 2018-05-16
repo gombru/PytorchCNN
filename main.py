@@ -14,30 +14,34 @@ from pylab import zeros, arange, subplots, plt, savefig
 #     if name.islower() and not name.startswith("__")
 #     and callable(models.__dict__[name]))
 
-training_id = 'resnet101_BCE'
+training_id = 'inception_v3_BCE'
 dataset = '../../ssd2/iMaterialistFashion' # Path to dataset
 split_train = '/anns/train'
 split_val =  '/anns/validation'
-arch = 'resnet101'
+arch = 'inception_v3'
+ImgSize = 299
+gpus = [1]
+gpu = 1
 workers = 12 # Num of data loading workers
 epochs = 150
 start_epoch = 0 # Useful on restarts
-batch_size = 256 #256 # Batch size
-lr = 0.01 # Initial learning rate # Default 0.1, but people report better performance with 0.01 and 0.001
-decay_every = 12 # Decay lr by a factor of 10 every decay_every epochs
+batch_size = 1 #256 # Batch size
+lr = 0.001 #0.01 Initial learning rate # Default 0.1, but people report better performance with 0.01 and 0.001
+decay_every = 15 # Decay lr by a factor of 10 every decay_every epochs
 momentum = 0.9
 weight_decay = 1e-4
 print_freq = 500
-resume = None # Path to checkpoint top resume training
+resume = None #dataset + '/models/resnet101_BCE/resnet101_BCE_epoch_12.pth.tar' # Path to checkpoint top resume training
 pretrained = True
 # evaluate = False # Evaluate model on validation set at start
 plot = True
 best_prec1 = 0
+aux_logits = False # To desactivate the other loss in Inception v3 (there is only one extra loss
 
 # create model
 if pretrained:
     print("=> using pre-trained model '{}'".format(arch))
-    model = models.__dict__[arch](pretrained=True)
+    model = models.__dict__[arch](pretrained=True, aux_logits=aux_logits)
 else:
     print("=> creating model '{}'".format(arch))
     model = models.__dict__[arch]()
@@ -53,15 +57,16 @@ model.fc = nn.Linear(2048,num_classes)
 print(model)
 
 if arch.startswith('alexnet') or arch.startswith('vgg'):
-    model.features = torch.nn.DataParallel(model.features)
-    model.cuda()
+    model.features = torch.nn.DataParallel(model.features)#, device_ids=gpus)
+    model.cuda(gpu)
 else:
-    model = torch.nn.DataParallel(model,device_ids=[0, 1, 2, 3]).cuda()
+    # model = torch.nn.DataParallel(model, device_ids=gpus).cuda(gpu)
+    model = torch.nn.DataParallel(model).cuda(gpu)
 
 # define loss function (criterion) and optimizer
-# criterion = nn.CrossEntropyLoss().cuda()
-# criterion = nn.MultiLabelSoftMarginLoss().cuda() # This is not the loss I want
-criterion = nn.BCEWithLogitsLoss().cuda()
+# criterion = nn.CrossEntropyLoss().cuda(gpu)
+# criterion = nn.MultiLabelSoftMarginLoss().cuda(gpu) # This is not the loss I want
+criterion = nn.BCEWithLogitsLoss().cuda(gpu)
 
 optimizer = torch.optim.SGD(model.parameters(), lr,
                             momentum=momentum,
@@ -85,10 +90,10 @@ cudnn.benchmark = True
 
 # Data loading code
 train_dataset = customDataset.CustomDataset(
-    dataset,split_train,Rescale=0,RandomCrop=224,Mirror=True)
+    dataset,split_train,Rescale=0,RandomCrop=ImgSize,Mirror=True)
 
 val_dataset = customDataset.CustomDataset(
-    dataset, split_val,Rescale=224,RandomCrop=0,Mirror=False)
+    dataset, split_val,Rescale=ImgSize,RandomCrop=0,Mirror=False)
 
 # if distributed:
 #     train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -131,10 +136,10 @@ for epoch in range(start_epoch, epochs):
     lr = t.adjust_learning_rate(optimizer, epoch, lr, decay_every)
 
     # train for one epoch
-    plot_data = t.train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_data)
+    plot_data = t.train(train_loader, model, criterion, optimizer, epoch, print_freq, plot_data, gpu)
 
     # evaluate on validation set
-    plot_data, prec1 = t.validate(val_loader, model, criterion, print_freq, plot_data)
+    plot_data, prec1 = t.validate(val_loader, model, criterion, print_freq, plot_data, gpu)
 
     # remember best prec@1 and save checkpoint
     is_best = prec1 > best_prec1
